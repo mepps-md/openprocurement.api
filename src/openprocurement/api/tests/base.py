@@ -18,9 +18,9 @@ now = datetime.now()
 test_organization = {
     "name": u"Державне управління справами",
     "identifier": {
-        "scheme": u"UA-EDR",
+        "scheme": u"MD-IDNO",
         "id": u"00037256",
-        "uri": u"http://www.dus.gov.ua/"
+        "uri": u"http://www.dus.gov.md/"
     },
     "address": {
         "countryName": u"Україна",
