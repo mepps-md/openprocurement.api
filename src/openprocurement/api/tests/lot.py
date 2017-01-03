@@ -112,7 +112,7 @@ class TenderLotResourceTest(BaseTenderWebTest):
         self.assertEqual(response.content_type, 'application/json')
         lots = response.json['data']
         self.assertEqual(len(lots), 1)
-        self.assertEqual(lots[0]['minimalStep']['currency'], "UAH")
+        self.assertEqual(lots[0]['minimalStep']['currency'], "MDL")
         self.assertEqual(lots[0]['minimalStep']['amount'], 100)
 
         response = self.app.patch_json('/tenders/{}'.format(self.tender_id), {"data": {"items": [{'relatedLot': '0' * 32}]}}, status=422)
@@ -153,7 +153,7 @@ class TenderLotResourceTest(BaseTenderWebTest):
         self.assertNotIn('guarantee', response.json['data']['lots'][0])
 
         lot3 = deepcopy(test_lots[0])
-        lot3['guarantee'] = {"amount": 500, "currency": "UAH"}
+        lot3['guarantee'] = {"amount": 500, "currency": "MDL"}
         response = self.app.post_json('/tenders/{}/lots'.format(self.tender_id), {'data': lot3}, status=422)
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
@@ -223,7 +223,7 @@ class TenderLotResourceTest(BaseTenderWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertIn('guarantee', response.json['data'])
         self.assertEqual(response.json['data']['guarantee']['amount'], 12)
-        self.assertEqual(response.json['data']['guarantee']['currency'], 'UAH')
+        self.assertEqual(response.json['data']['guarantee']['currency'], 'MDL')
 
         response = self.app.patch_json('/tenders/{}/lots/{}'.format(self.tender_id, lot['id']), {"data": {"guarantee": {"currency": "USD"}}})
         self.assertEqual(response.status, '200 OK')
@@ -265,7 +265,7 @@ class TenderLotResourceTest(BaseTenderWebTest):
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
         lot = response.json['data']
-        self.assertEqual(lot['value']['currency'], "UAH")
+        self.assertEqual(lot['value']['currency'], "MDL")
 
         # update tender currency without mimimalStep currency change
         response = self.app.patch_json('/tenders/{}'.format(self.tender_id), {"data": {"value": {"currency": "GBP"}}}, status=422)
@@ -322,6 +322,7 @@ class TenderLotResourceTest(BaseTenderWebTest):
         self.assertEqual(lot['value']['currency'], "GBP")
         self.assertEqual(lot['minimalStep']['currency'], "GBP")
 
+    @unittest.skip("In MEPPS VAT always False")
     def test_patch_tender_vat(self):
         # set tender VAT
         response = self.app.patch_json('/tenders/{}'.format(self.tender_id), {"data": {"value": {"valueAddedTaxIncluded": True}}})
@@ -687,7 +688,7 @@ class TenderLotBidderResourceTest(BaseTenderWebTest):
             {u'description': [{u'value': [u'value of bid should be less than value of lot']}], u'location': u'body', u'name': u'lotValues'}
         ])
 
-        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], 'lotValues': [{"value": {"amount": 500, 'valueAddedTaxIncluded': False}, 'relatedLot': self.initial_lots[0]['id']}]}}, status=422)
+        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], 'lotValues': [{"value": {"amount": 500, 'valueAddedTaxIncluded': True}, 'relatedLot': self.initial_lots[0]['id']}]}}, status=422)
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -861,7 +862,7 @@ class TenderLotFeatureBidderResourceTest(BaseTenderWebTest):
             {u'description': [{u'value': [u'value of bid should be less than value of lot']}], u'location': u'body', u'name': u'lotValues'}
         ])
 
-        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], 'lotValues': [{"value": {"amount": 500, 'valueAddedTaxIncluded': False}, 'relatedLot': self.lot_id}]}}, status=422)
+        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], 'lotValues': [{"value": {"amount": 500, 'valueAddedTaxIncluded': True}, 'relatedLot': self.lot_id}]}}, status=422)
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')

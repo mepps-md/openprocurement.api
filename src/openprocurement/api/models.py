@@ -210,7 +210,7 @@ class Value(Model):
 
     amount = FloatType(required=True, min_value=0)  # Amount as a number.
     currency = StringType(required=True, default=u'MDL', max_length=3, min_length=3)  # The currency in 3-letter ISO 4217 format.
-    valueAddedTaxIncluded = BooleanType(required=True, default=True)
+    valueAddedTaxIncluded = BooleanType(required=True, default=False)
 
 
 class Guarantee(Model):
@@ -1060,6 +1060,9 @@ class Lot(Model):
             if data.get('value').amount < value.amount:
                 raise ValidationError(u"value should be less than value of lot")
 
+    def validate_value(self, data, value):
+        if value.valueAddedTaxIncluded is not False:
+            raise ValidationError(u"Currently, only procedures with VAT excluded are supported")
 
 
 def validate_features_uniq(features, *args):
@@ -1407,6 +1410,10 @@ class Tender(SchematicsDocument, Model):
     def validate_auctionUrl(self, data, url):
         if url and data['lots']:
             raise ValidationError(u"url should be posted for each lot")
+
+    def validate_value(self, data, value):
+        if value.valueAddedTaxIncluded is not False:
+            raise ValidationError(u"Currently, only procedures with VAT excluded are supported")
 
     def validate_minimalStep(self, data, value):
         if value and value.amount and data.get('value'):

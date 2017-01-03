@@ -485,8 +485,20 @@ class TenderResourceTest(BaseWebTest):
             {u'description': [u'value should be less than value of tender'], u'location': u'body', u'name': u'minimalStep'}
         ])
 
+        test_tender_data['minimalStep']['valueAddedTaxIncluded'] = True
+        test_tender_data['value']['valueAddedTaxIncluded'] = True
+        response = self.app.post_json(request_path, {'data': test_tender_data}, status=422)
+        test_tender_data['minimalStep']['valueAddedTaxIncluded'] = False
+        test_tender_data['value']['valueAddedTaxIncluded'] = False
+        self.assertEqual(response.status, '422 Unprocessable Entity')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'], [
+            {u'description': [u'Currently, only procedures with VAT excluded are supported'], u'location': u'body', u'name': u'value'}
+        ])
+
         data = test_tender_data['minimalStep']
-        test_tender_data['minimalStep'] = {'amount': '100.0', 'valueAddedTaxIncluded': False}
+        test_tender_data['minimalStep'] = {'amount': '100.0', 'valueAddedTaxIncluded': True}
         response = self.app.post_json(request_path, {'data': test_tender_data}, status=422)
         test_tender_data['minimalStep'] = data
         self.assertEqual(response.status, '422 Unprocessable Entity')
@@ -961,7 +973,7 @@ class TenderResourceTest(BaseWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertIn('guarantee', response.json['data'])
         self.assertEqual(response.json['data']['guarantee']['amount'], 12)
-        self.assertEqual(response.json['data']['guarantee']['currency'], 'UAH')
+        self.assertEqual(response.json['data']['guarantee']['currency'], 'MDL')
 
         response = self.app.patch_json('/tenders/{}?acc_token={}'.format(tender['id'], owner_token), {"data": {"guarantee": {"currency": "USD"}}})
         self.assertEqual(response.status, '200 OK')
@@ -1079,7 +1091,7 @@ class TenderResourceTest(BaseWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertIn('guarantee', response.json['data'])
         self.assertEqual(response.json['data']['guarantee']['amount'], 55)
-        self.assertEqual(response.json['data']['guarantee']['currency'], 'UAH')
+        self.assertEqual(response.json['data']['guarantee']['currency'], 'MDL')
 
         response = self.app.patch_json('/tenders/{}'.format(tender['id']),
                                        {'data': {'guarantee': {"amount": 100500, "currency": "USD"}}})

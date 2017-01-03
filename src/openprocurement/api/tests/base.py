@@ -40,11 +40,11 @@ test_tender_data = {
     "procuringEntity": test_procuringEntity,
     "value": {
         "amount": 500,
-        "currency": u"UAH"
+        "currency": u"MDL"
     },
     "minimalStep": {
         "amount": 35,
-        "currency": u"UAH"
+        "currency": u"MDL"
     },
     "items": [
         {
@@ -141,8 +141,7 @@ test_bids = [
         ],
         "value": {
             "amount": 469,
-            "currency": "UAH",
-            "valueAddedTaxIncluded": True
+            "currency": "MDL"
         }
     },
     {
@@ -151,8 +150,7 @@ test_bids = [
         ],
         "value": {
             "amount": 479,
-            "currency": "UAH",
-            "valueAddedTaxIncluded": True
+            "currency": "MDL"
         }
     }
 ]

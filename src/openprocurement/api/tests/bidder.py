@@ -103,7 +103,7 @@ class TenderBidderResourceTest(BaseTenderWebTest):
             {u'description': [u'This field is required.'], u'location': u'body', u'name': u'value'}
         ])
 
-        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], "value": {"amount": 500, 'valueAddedTaxIncluded': False}}}, status=422)
+        response = self.app.post_json(request_path, {'data': {'tenderers': [test_organization], "value": {"amount": 500, 'valueAddedTaxIncluded': True}}}, status=422)
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -374,8 +374,8 @@ class TenderBidderFeaturesResourceTest(BaseTenderWebTest):
                 ],
                 "value": {
                     "amount": 469,
-                    "currency": "UAH",
-                    "valueAddedTaxIncluded": True
+                    "currency": "MDL",
+                    "valueAddedTaxIncluded": False
                 }
             },
             {
@@ -392,8 +392,8 @@ class TenderBidderFeaturesResourceTest(BaseTenderWebTest):
                 "status": "draft",
                 "value": {
                     "amount": 479,
-                    "currency": "UAH",
-                    "valueAddedTaxIncluded": True
+                    "currency": "MDL",
+                    "valueAddedTaxIncluded": False
                 }
             }
         ]
@@ -413,8 +413,8 @@ class TenderBidderFeaturesResourceTest(BaseTenderWebTest):
             ],
             "value": {
                 "amount": 469,
-                "currency": "UAH",
-                "valueAddedTaxIncluded": True
+                "currency": "MDL",
+                "valueAddedTaxIncluded": False
             }
         }
         response = self.app.post_json('/tenders/{}/bids'.format(self.tender_id), {'data': data}, status=422)

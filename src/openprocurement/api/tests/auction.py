@@ -99,8 +99,8 @@ class TenderAuctionResourceTest(BaseTenderWebTest):
                     "id": self.initial_bids[1]['id'],
                     "value": {
                         "amount": 409,
-                        "currency": "UAH",
-                        "valueAddedTaxIncluded": True
+                        "currency": "MDL",
+                        "valueAddedTaxIncluded": False
                     }
                 }
             ]
@@ -114,8 +114,8 @@ class TenderAuctionResourceTest(BaseTenderWebTest):
         patch_data['bids'].append({
             "value": {
                 "amount": 419,
-                "currency": "UAH",
-                "valueAddedTaxIncluded": True
+                "currency": "MDL",
+                "valueAddedTaxIncluded": False
             }
         })
 
@@ -242,16 +242,16 @@ class TenderAuctionResourceTest(BaseTenderWebTest):
                     "id": self.initial_bids[1]['id'],
                     "value": {
                         "amount": 409,
-                        "currency": "UAH",
-                        "valueAddedTaxIncluded": True
+                        "currency": "MDL",
+                        "valueAddedTaxIncluded": False
                     }
                 },
                 {
                     'id': self.initial_bids[0]['id'],
                     "value": {
                         "amount": 419,
-                        "currency": "UAH",
-                        "valueAddedTaxIncluded": True
+                        "currency": "MDL",
+                        "valueAddedTaxIncluded": False
                     }
                 }
             ]
@@ -284,8 +284,8 @@ class TenderSameValueAuctionResourceTest(BaseTenderWebTest):
             ],
             "value": {
                 "amount": 469,
-                "currency": "UAH",
-                "valueAddedTaxIncluded": True
+                "currency": "MDL",
+                "valueAddedTaxIncluded": False
             }
         }
         for i in range(3)
@@ -381,8 +381,8 @@ class TenderLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 409,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                     ]
@@ -400,8 +400,8 @@ class TenderLotAuctionResourceTest(TenderAuctionResourceTest):
                 {
                     "value": {
                         "amount": 419,
-                        "currency": "UAH",
-                        "valueAddedTaxIncluded": True
+                        "currency": "MDL",
+                        "valueAddedTaxIncluded": False
                     }
                 }
             ]
@@ -583,8 +583,8 @@ class TenderLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 409,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                     ]
@@ -595,8 +595,8 @@ class TenderLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 419,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                     ]
@@ -680,8 +680,8 @@ class TenderMultipleLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 409,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                     ]
@@ -699,8 +699,8 @@ class TenderMultipleLotAuctionResourceTest(TenderAuctionResourceTest):
                 {
                     "value": {
                         "amount": 419,
-                        "currency": "UAH",
-                        "valueAddedTaxIncluded": True
+                        "currency": "MDL",
+                        "valueAddedTaxIncluded": False
                     }
                 }
             ]
@@ -939,8 +939,8 @@ class TenderMultipleLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 409,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                         for i in self.initial_lots
@@ -952,8 +952,8 @@ class TenderMultipleLotAuctionResourceTest(TenderAuctionResourceTest):
                         {
                             "value": {
                                 "amount": 419,
-                                "currency": "UAH",
-                                "valueAddedTaxIncluded": True
+                                "currency": "MDL",
+                                "valueAddedTaxIncluded": False
                             }
                         }
                         for i in self.initial_lots
@@ -997,8 +997,8 @@ class TenderFeaturesAuctionResourceTest(BaseTenderWebTest):
             ],
             "value": {
                 "amount": 469,
-                "currency": "UAH",
-                "valueAddedTaxIncluded": True
+                "currency": "MDL",
+                "valueAddedTaxIncluded": False
             }
         },
         {
@@ -1014,8 +1014,8 @@ class TenderFeaturesAuctionResourceTest(BaseTenderWebTest):
             ],
             "value": {
                 "amount": 479,
-                "currency": "UAH",
-                "valueAddedTaxIncluded": True
+                "currency": "MDL",
+                "valueAddedTaxIncluded": False
             }
         }
     ]
