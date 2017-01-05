@@ -90,14 +90,14 @@ class AccreditationTenderBidTest(BaseTenderWebTest):
     def test_create_tender_bid_accreditation(self):
         self.app.authorization = ('Basic', ('broker2', ''))
         response = self.app.post_json('/tenders/{}/bids'.format(self.tender_id),
-                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500}}})
+                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500, "valueAddedTaxIncluded": False}}})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
 
         for broker in ['broker1', 'broker3', 'broker4']:
             self.app.authorization = ('Basic', (broker, ''))
             response = self.app.post_json('/tenders/{}/bids'.format(self.tender_id),
-                                          {'data': {'tenderers': [test_organization], "value": {"amount": 500}}},
+                                          {'data': {'tenderers': [test_organization], "value": {"amount": 500, "valueAddedTaxIncluded": False}}},
                                           status=403)
             self.assertEqual(response.status, '403 Forbidden')
             self.assertEqual(response.content_type, 'application/json')
@@ -105,7 +105,7 @@ class AccreditationTenderBidTest(BaseTenderWebTest):
 
         self.app.authorization = ('Basic', ('broker2t', ''))
         response = self.app.post_json('/tenders/{}/bids'.format(self.tender_id),
-                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500}}},
+                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500, "valueAddedTaxIncluded": False}}},
                                       status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
@@ -119,7 +119,7 @@ class AccreditationTenderBidModeTest(BaseTenderWebTest):
     def test_create_tender_bid_accreditation(self):
         self.app.authorization = ('Basic', ('broker2t', ''))
         response = self.app.post_json('/tenders/{}/bids'.format(self.tender_id),
-                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500}}})
+                                      {'data': {'tenderers': [test_organization], "value": {"amount": 500, "valueAddedTaxIncluded": False}}})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
 
