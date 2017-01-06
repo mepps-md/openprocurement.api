@@ -79,6 +79,12 @@ class TenderAwardContractResource(APIResource):
                 self.request.errors.add('body', 'data', 'Value amount should be less or equal to awarded amount ({})'.format(award.value.amount))
                 self.request.errors.status = 403
                 return
+        if data.get('items') and len(data['items']) != len(self.request.context['items']):
+            # as it is alowed to set/change contract.item.unit.value we need to
+            # ensure that nobody is able to add or delete contract.item
+            self.request.errors.add('body', 'data', 'Can\'t change items count')
+            self.request.errors.status = 403
+            return
 
         if self.request.context.status != 'active' and 'status' in data and data['status'] == 'active':
             award = [a for a in tender.awards if a.id == self.request.context.awardID][0]

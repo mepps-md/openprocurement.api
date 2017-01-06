@@ -332,8 +332,34 @@ class Location(Model):
     elevation = BaseType()
 
 
+class ItemValue(Value):
+    currency = StringType(max_length=3, min_length=3)
+    valueAddedTaxIncluded = BooleanType()
+
+    @serializable(serialized_name="currency", serialize_when_none=False)
+    def unit_currency(self):
+        if self.currency is not None:
+            return self.currency
+        return get_tender(self).value.currency
+
+    @serializable(serialized_name="valueAddedTaxIncluded", serialize_when_none=False)
+    def unit_valueAddedTaxIncluded(self):
+        if self.valueAddedTaxIncluded is not None:
+            return self.valueAddedTaxIncluded
+        return get_tender(self).value.valueAddedTaxIncluded
+
+
+class ItemUnit(Unit):
+    value = ModelType(ItemValue)
+
+
 class Item(Model):
     """A good, service, or work to be contracted."""
+
+    class Options:
+        roles = {
+            'edit_contract': whitelist('unit')
+        }
 
     id = StringType(required=True, min_length=1, default=lambda: uuid4().hex)
     description = StringType(required=True)  # A description of the goods, services to be provided.
@@ -341,7 +367,7 @@ class Item(Model):
     description_ru = StringType()
     classification = ModelType(CPVClassification, required=True)
     additionalClassifications = ListType(ModelType(Classification))
-    unit = ModelType(Unit)  # Description of the unit which the good comes in e.g. hours, kilograms
+    unit = ModelType(ItemUnit)  # Description of the unit which the good comes in e.g. hours, kilograms
     quantity = IntType()  # The number of units required
     deliveryDate = ModelType(Period)
     deliveryAddress = ModelType(Address)
@@ -351,6 +377,7 @@ class Item(Model):
     def validate_relatedLot(self, data, relatedLot):
         if relatedLot and isinstance(data['__parent__'], Model) and relatedLot not in [i.id for i in get_tender(data['__parent__']).lots]:
             raise ValidationError(u"relatedLot should be one of lots")
+
 
 class HashType(StringType):
 
@@ -877,7 +904,8 @@ class Contract(Model):
     class Options:
         roles = {
             'create': blacklist('id', 'status', 'date', 'documents', 'dateSigned'),
-            'edit': blacklist('id', 'documents', 'date', 'awardID', 'suppliers', 'items', 'contractID'),
+            'edit': whitelist(),
+            'edit_contract': blacklist('id', 'documents', 'date', 'awardID', 'suppliers', 'contractID'),
             'embedded': schematics_embedded_role,
             'view': schematics_default_role,
         }
@@ -900,6 +928,16 @@ class Contract(Model):
     items = ListType(ModelType(Item))
     suppliers = ListType(ModelType(Organization), min_size=1, max_size=1)
     date = IsoDateTimeType()
+
+    def get_role(self):
+        root = self.__parent__
+        while root.__parent__ is not None:
+            root = root.__parent__
+        request = root.request
+        role = 'edit'
+        if request.authenticated_role == 'tender_owner':
+            role = 'edit_contract'
+        return role
 
     def validate_awardID(self, data, awardID):
         if awardID and isinstance(data['__parent__'], Model) and awardID not in [i.id for i in data['__parent__'].awards]:
