@@ -3,7 +3,7 @@ import unittest
 from iso8601 import parse_date
 from datetime import timedelta
 
-from openprocurement.api.models import get_now
+from openprocurement.api.models import get_now, STAND_STILL_PENDING_SIGNED
 from openprocurement.api.tests.base import BaseTenderWebTest, test_tender_data, test_bids, test_lots, test_organization
 
 
@@ -865,7 +865,7 @@ class TenderContractChangeStatusTest(BaseTenderWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['data']["status"], "pending.signed")
         last_status_change_date = response.json['data']['date']
-        stand_still_end = parse_date(last_status_change_date) + timedelta(hours=24)
+        stand_still_end = parse_date(last_status_change_date) + STAND_STILL_PENDING_SIGNED
 
         response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"description": "new description"}})
         self.assertEqual(response.status, '200 OK')
@@ -878,7 +878,7 @@ class TenderContractChangeStatusTest(BaseTenderWebTest):
 
         # time travel: set last contract status update in 24 hours earlier
         tender = self.db.get(self.tender_id)
-        date_in_the_past = parse_date(last_status_change_date) - timedelta(hours=24)
+        date_in_the_past = parse_date(last_status_change_date) - STAND_STILL_PENDING_SIGNED
         tender['contracts'][-1]["date"] = date_in_the_past.isoformat()
         self.db.save(tender)
 
