@@ -217,6 +217,7 @@ class BaseWebTest(unittest.TestCase):
     """
 
     relative_to = os.path.dirname(__file__)
+    initial_auth = ('Basic', ('token', ''))  # BBB
 
     @classmethod
     def setUpClass(cls):
@@ -247,7 +248,7 @@ class BaseWebTest(unittest.TestCase):
         self.app.app.registry.db = db
         self.db = self.app.app.registry.db
         self.db_name = self.db.name
-        self.app.authorization = ('Basic', ('token', ''))
+        self.app.authorization = self.initial_auth
         #self.app.authorization = ('Basic', ('broker', ''))
 
     def tearDown(self):

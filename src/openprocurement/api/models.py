@@ -19,6 +19,7 @@ from string import hexdigits
 from hashlib import algorithms, new as hash_new
 
 STAND_STILL_TIME = timedelta(minutes=1)
+STAND_STILL_PENDING_SIGNED = timedelta(minutes=15)
 COMPLAINT_STAND_STILL_TIME = timedelta(days=3)
 BIDDER_TIME = timedelta(minutes=6)
 SERVICE_TIME = timedelta(minutes=9)
@@ -906,6 +907,7 @@ class Contract(Model):
             'create': blacklist('id', 'status', 'date', 'documents', 'dateSigned'),
             'edit': whitelist(),
             'edit_contract': blacklist('id', 'documents', 'date', 'awardID', 'suppliers', 'contractID'),
+            'edit_pending.signed': whitelist('status'),
             'embedded': schematics_embedded_role,
             'view': schematics_default_role,
         }
@@ -920,7 +922,7 @@ class Contract(Model):
     description = StringType()  # Contract description
     description_en = StringType()
     description_ru = StringType()
-    status = StringType(choices=['pending', 'terminated', 'active', 'cancelled'], default='pending')
+    status = StringType(choices=['pending', 'pending.signed', 'terminated', 'active', 'cancelled'], default='pending')
     period = ModelType(Period)
     value = ModelType(Value)
     dateSigned = IsoDateTimeType()
@@ -935,8 +937,13 @@ class Contract(Model):
             root = root.__parent__
         request = root.request
         role = 'edit'
+
         if request.authenticated_role == 'tender_owner':
             role = 'edit_contract'
+
+            if request.context.status == 'pending.signed':
+                role = 'edit_pending.signed'
+
         return role
 
     def validate_awardID(self, data, awardID):
@@ -1131,9 +1138,9 @@ def validate_cpv_group(items, *args):
 
 
 plain_role = (blacklist('_attachments', 'revisions', 'dateModified') + schematics_embedded_role)
-create_role = (blacklist('transfer_token', 'owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'tenderID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'status', 'auctionPeriod', 'awardPeriod', 'procurementMethod', 'awardCriteria', 'submissionMethod', 'cancellations') + schematics_embedded_role)
+create_role = (blacklist('transfer_token', 'owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'tenderID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'status', 'auctionPeriod', 'awardPeriod', 'procurementMethod', 'awardCriteria', 'submissionMethod', 'cancellations', 'contracts') + schematics_embedded_role)
 draft_role = whitelist('status')
-edit_role = (blacklist('status', 'procurementMethodType', 'lots', 'transfer_token', 'owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'tenderID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'auctionPeriod', 'awardPeriod', 'procurementMethod', 'awardCriteria', 'submissionMethod', 'mode', 'cancellations') + schematics_embedded_role)
+edit_role = (blacklist('status', 'procurementMethodType', 'lots', 'transfer_token', 'owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'tenderID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'auctionPeriod', 'awardPeriod', 'procurementMethod', 'awardCriteria', 'submissionMethod', 'mode', 'cancellations', 'contracts') + schematics_embedded_role)
 view_role = (blacklist('transfer_token', 'owner_token', '_attachments', 'revisions') + schematics_embedded_role)
 listing_role = whitelist('dateModified', 'doc_id')
 auction_view_role = whitelist('tenderID', 'dateModified', 'bids', 'items', 'auctionPeriod', 'minimalStep', 'auctionUrl', 'features', 'lots')
