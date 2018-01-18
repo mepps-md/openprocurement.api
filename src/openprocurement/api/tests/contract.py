@@ -577,7 +577,7 @@ class TenderContractDocumentResourceTest(BaseTenderWebTest):
         self.assertEqual('name.doc', response.json["data"]["title"])
 
         # pending.signed contract status
-        response = self.app.patch_json('/tenders/{}/contracts/{}'.format(self.tender_id, self.contract_id), {"data": {"status": "pending.signed"}})
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, self.contract_id, self.tender_token), {"data": {"status": "pending.signed"}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.json['data']['status'], 'pending.signed')
 
@@ -598,7 +598,7 @@ class TenderContractDocumentResourceTest(BaseTenderWebTest):
             i['complaintPeriod']['endDate'] = i['complaintPeriod']['startDate']
         self.db.save(tender)
 
-        response = self.app.patch_json('/tenders/{}/contracts/{}'.format(self.tender_id, self.contract_id), {"data": {"status": "active"}})
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, self.contract_id, self.tender_token), {"data": {"status": "active"}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.json['data']['status'], 'active')
 
