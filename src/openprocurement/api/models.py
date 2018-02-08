@@ -19,6 +19,7 @@ from string import hexdigits
 from hashlib import algorithms, new as hash_new
 
 STAND_STILL_TIME = timedelta(minutes=1)
+STAND_STILL_PENDING_SIGNED = timedelta(minutes=15)
 COMPLAINT_STAND_STILL_TIME = timedelta(days=3)
 BIDDER_TIME = timedelta(minutes=6)
 SERVICE_TIME = timedelta(minutes=9)
@@ -878,6 +879,7 @@ class Contract(Model):
         roles = {
             'create': blacklist('id', 'status', 'date', 'documents', 'dateSigned'),
             'edit': blacklist('id', 'documents', 'date', 'awardID', 'suppliers', 'items', 'contractID'),
+            'edit_pending.signed': whitelist('status'),
             'embedded': schematics_embedded_role,
             'view': schematics_default_role,
         }
@@ -892,7 +894,7 @@ class Contract(Model):
     description = StringType()  # Contract description
     description_en = StringType()
     description_ru = StringType()
-    status = StringType(choices=['pending', 'terminated', 'active', 'cancelled'], default='pending')
+    status = StringType(choices=['pending', 'pending.signed', 'terminated', 'active', 'cancelled'], default='pending')
     period = ModelType(Period)
     value = ModelType(Value)
     dateSigned = IsoDateTimeType()
@@ -912,6 +914,16 @@ class Contract(Model):
                 raise ValidationError(u"Contract signature date should be after award complaint period end date ({})".format(award.complaintPeriod.endDate.isoformat()))
             if value > get_now():
                 raise ValidationError(u"Contract signature date can't be in the future")
+
+    def get_role(self):
+        root = self.__parent__
+        while root.__parent__ is not None:
+            root = root.__parent__
+        request = root.request
+        role = 'edit'
+        if request.authenticated_role == 'tender_owner' and request.context.status == 'pending.signed':
+            role = 'edit_pending.signed'
+        return role
 
 
 class Award(Model):

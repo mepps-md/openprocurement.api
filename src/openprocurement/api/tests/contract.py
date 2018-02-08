@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
+from iso8601 import parse_date
 from datetime import timedelta
 
-from openprocurement.api.models import get_now
+from openprocurement.api.models import get_now, STAND_STILL_PENDING_SIGNED
 from openprocurement.api.tests.base import BaseTenderWebTest, test_tender_data, test_bids, test_lots, test_organization
 
 
@@ -567,6 +568,54 @@ class TenderContractDocumentResourceTest(BaseTenderWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['errors'][0]["description"], "Can't add document in current (unsuccessful) tender status")
 
+    def test_create_update_contract_document(self):
+        # pending contract status
+        response = self.app.post('/tenders/{}/contracts/{}/documents'.format(
+            self.tender_id, self.contract_id), upload_files=[('file', 'name.doc', 'content')])
+        self.assertEqual(response.status, '201 Created')
+        doc_id = response.json["data"]['id']
+        self.assertEqual('name.doc', response.json["data"]["title"])
+
+        # pending.signed contract status
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, self.contract_id, self.tender_token), {"data": {"status": "pending.signed"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.json['data']['status'], 'pending.signed')
+
+        response = self.app.post('/tenders/{}/contracts/{}/documents'.format(
+            self.tender_id, self.contract_id), upload_files=[('file', 'name_pending_signed.doc', 'content')], status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.json['errors'][0]["description"], "Can't add document in current contract status")
+
+        response = self.app.put('/tenders/{}/contracts/{}/documents/{}'.format(
+            self.tender_id, self.contract_id, doc_id), upload_files=[('file', 'name.doc', 'content2')], status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.json['errors'][0]["description"], "Can't update document in current contract status")
+
+        # active contract status add
+        # time travel
+        tender = self.db.get(self.tender_id)
+        for i in tender.get('awards', []):
+            i['complaintPeriod']['endDate'] = i['complaintPeriod']['startDate']
+        self.db.save(tender)
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, self.contract_id, self.tender_token), {"data": {"status": "active"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.json['data']['status'], 'active')
+
+        response = self.app.get('/tenders/{}'.format(self.tender_id))
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.json['data']['status'], 'complete')
+
+        response = self.app.post('/tenders/{}/contracts/{}/documents'.format(
+            self.tender_id, self.contract_id), upload_files=[('file', 'name.doc', 'content')], status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.json['errors'][0]["description"], "Can't add document in current (complete) tender status")
+
+        response = self.app.put('/tenders/{}/contracts/{}/documents/{}'.format(
+            self.tender_id, self.contract_id, doc_id), upload_files=[('file', 'name.doc', 'content2')], status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.json['errors'][0]["description"], "Can't update document in current (complete) tender status")
+
     def test_put_tender_contract_document(self):
         response = self.app.post('/tenders/{}/contracts/{}/documents'.format(
             self.tender_id, self.contract_id), upload_files=[('file', 'name.doc', 'content')])
@@ -786,6 +835,62 @@ class Tender2LotContractDocumentResourceTest(BaseTenderWebTest):
         self.assertEqual(response.json['errors'][0]["description"], "Can update document only in active lot status")
 
 
+class TenderContractChangeStatusTest(BaseTenderWebTest):
+    initial_status = 'active.qualification'
+    initial_bids = test_bids
+    initial_auth = ('Basic', ('broker', ''))
+
+    def setUp(self):
+        super(TenderContractChangeStatusTest, self).setUp()
+        # Create award
+        auth = self.app.authorization
+        self.app.authorization = ('Basic', ('token', ''))
+        response = self.app.post_json('/tenders/{}/awards'.format(
+            self.tender_id), {'data': {'suppliers': [test_organization], 'status': 'pending', 'bid_id': self.initial_bids[0]['id'], 'value': test_tender_data["value"], 'items': test_tender_data["items"]}})
+        award = response.json['data']
+        self.app.authorization = auth
+        self.award_id = award['id']
+        self.award_value = award['value']
+        self.award_suppliers = award['suppliers']
+        self.award_items = award['items']
+        response = self.app.patch_json('/tenders/{}/awards/{}?acc_token={}'.format(self.tender_id, self.award_id, self.tender_token), {"data": {"status": "active"}})
+
+
+    def test_patch_tender_contract_pending_signed_status(self):
+        response = self.app.get('/tenders/{}/contracts'.format(self.tender_id))
+        contract = response.json['data'][0]
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"status": "pending.signed"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data']["status"], "pending.signed")
+        last_status_change_date = response.json['data']['date']
+        stand_still_end = parse_date(last_status_change_date) + STAND_STILL_PENDING_SIGNED
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"description": "new description"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.body, 'null')
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"status": "pending"}}, status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['errors'][0]["description"], 'Can\'t return contract to pending status before ({})'.format(stand_still_end.isoformat()))
+
+        # time travel: set last contract status update in 24 hours earlier
+        tender = self.db.get(self.tender_id)
+        date_in_the_past = parse_date(last_status_change_date) - STAND_STILL_PENDING_SIGNED
+        tender['contracts'][-1]["date"] = date_in_the_past.isoformat()
+        self.db.save(tender)
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"status": "pending"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data']["status"], "pending")
+
+        response = self.app.patch_json('/tenders/{}/contracts/{}?acc_token={}'.format(self.tender_id, contract['id'], self.tender_token), {"data": {"status": "pending.signed"}})
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data']["status"], "pending.signed")
 
 def suite():
     suite = unittest.TestSuite()

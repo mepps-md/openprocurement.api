@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from openprocurement.api.models import get_now
+from openprocurement.api.models import get_now, STAND_STILL_PENDING_SIGNED
 from openprocurement.api.utils import (
     apply_patch,
     save_tender,
@@ -67,7 +67,7 @@ class TenderAwardContractResource(APIResource):
             return
         data = self.request.validated['data']
 
-        if data['value']:
+        if data.get('value'):
             for ro_attr in ('valueAddedTaxIncluded', 'currency'):
                 if data['value'][ro_attr] != getattr(self.context.value, ro_attr):
                     self.request.errors.add('body', 'data', 'Can\'t update {} for contract value'.format(ro_attr))
@@ -102,12 +102,20 @@ class TenderAwardContractResource(APIResource):
                 self.request.errors.add('body', 'data', 'Can\'t sign contract before reviewing all complaints')
                 self.request.errors.status = 403
                 return
+
         contract_status = self.request.context.status
+        last_status_change_date = self.request.context.date
         apply_patch(self.request, save=False, src=self.request.context.serialize())
-        if contract_status != self.request.context.status and (contract_status != 'pending' or self.request.context.status != 'active'):
+        if contract_status != self.request.context.status and (contract_status not in ['pending', 'pending.signed'] or self.request.context.status not in ['active', 'pending', 'pending.signed']):
             self.request.errors.add('body', 'data', 'Can\'t update contract status')
             self.request.errors.status = 403
             return
+        if contract_status == 'pending.signed' and self.request.context.status == 'pending':
+            stand_still_end = last_status_change_date + STAND_STILL_PENDING_SIGNED
+            if get_now() < stand_still_end:
+                self.request.errors.add('body', 'data', 'Can\'t return contract to pending status before ({})'.format((stand_still_end).isoformat()))
+                self.request.errors.status = 403
+                return
         if self.request.context.status == 'active' and not self.request.context.dateSigned:
             self.request.context.dateSigned = get_now()
         check_tender_status(self.request)
