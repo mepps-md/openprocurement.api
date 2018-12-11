@@ -57,7 +57,7 @@ class TenderLotResource(APIResource):
         """Update of lot
         """
         tender = self.request.validated['tender']
-        if tender.status not in ['active.enquiries']:
+        if self.request.authenticated_role != 'Administrator' and tender.status not in ['active.enquiries']:
             self.request.errors.add('body', 'data', 'Can\'t update lot in current ({}) tender status'.format(tender.status))
             self.request.errors.status = 403
             return
